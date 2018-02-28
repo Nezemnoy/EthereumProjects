@@ -1,0 +1,95 @@
+//Указываем версию компилятора
+
+pragma solidity ^0.4.16;
+
+//Объявляем Интерфейсы
+
+interface MultiToken {
+
+    function transfer(address _to, uint256 _value) returns (bool);
+    function balanceOf(address who) constant returns (uint256);
+    event Transfer (address indexed from, address indexed to, uint256 value);
+
+}
+
+//объявляем контракт
+
+contract Multi{
+
+
+    //объявляем переменную для хранения токена
+    MultiToken public token;
+
+    //объявляем массив для списка кошельков получателей
+    address [] public walletsList;
+
+    //объявляем перменную длинны списка
+    uint public length;
+
+    //переменная баланса
+    uint256 public balance;
+
+    //функция инициализации
+    function Multi (){}
+
+    //функция привязки токена
+    function newToken (MultiToken _token){
+
+        token = _token;
+    }
+
+    //функция формирования списка кошельков
+
+    function pushWallet (address _wallet)public {
+
+        require (_wallet != address (0));
+        walletsList.push(_wallet);
+        length = walletsList.length;
+    }
+
+    //функция удаления кошелька
+
+    function remove(uint _position)  public {
+
+        if (_position >= walletsList.length) return;
+
+        for (uint i = _position; i<walletsList.length-1; i++){
+            walletsList[i] = walletsList[i+1];
+        }
+        walletsList.length--;
+
+        length = walletsList.length;
+
+
+    }
+
+    //функция баланса
+    function getBalance() public{
+
+        balance = token.balanceOf(this);
+
+    }
+
+
+    //функция для нескольких переводов
+    function multiTransfer (uint _value) public {
+
+        for  (uint i=0; i < walletsList.length; i++)
+        {
+            require (token.balanceOf(this)>=_value);
+            require (walletsList[i] != address (0));
+
+            token.transfer (walletsList[i], _value);
+
+            token.Transfer (this, walletsList[i], _value);
+
+        }
+    }
+
+
+}
+
+
+
+
+

@@ -1,0 +1,127 @@
+pragma solidity ^0.4.11;
+
+
+//инициализация контракта
+contract UniToken{
+
+    //объявляем переменную в которой будет название токена
+    string public name;
+
+    //объявляем переменную в которой будет символ токена
+    string public symbol;
+
+    //объявляе переменную в которой будет кол-во нулей токена
+    uint8 public decimals;
+
+    //объявляем переменную в которой будет храниться общее кол-во нулей токена
+    uint256 public totalSupply;
+
+    //объявлем маппинг для храненния балансов пользователей
+    mapping (address => uint256) public balanceOf;
+
+    //объявляем маппинг для хранения одобренных транзакций
+
+    mapping (address => mapping(address => uint256)) allowed;
+
+    //объявляем эвент для логирования события перевода токенов
+
+    event Transfer (address  indexed from, address indexed to, uint256 value);
+
+    //объявляем эвент для логирования события одобрения перевода токенов
+
+    event Approval (address indexed from, address indexed to, uint256 value);
+
+    //функция инициализации контракта
+
+    function UniToken() {
+
+        //указыввем число нулей
+        decimals = 8;
+
+        //объявляем общее число токенов, котрое будет создано при инциализации
+        totalSupply = 1000000 * (10 ** uint256(decimals));
+
+        //отправляем свсе токены на баланс того, кто инициализировал согздание контракта токена
+        balanceOf[msg.sender] = totalSupply;
+
+        //указываем название токена
+        name = "UniCoin";
+
+        //указываем символ токена
+        symbol = "UNI";
+
+    }
+
+    // внутрення функция для перевода токенов
+    function _transfer (address _from, address _to, uint256 _value) internal {
+
+        //проверка на пустой адрес
+        require (_to != 0x0);
+
+        //проверка того, что отравителю хватает токенов для перевода
+        require (balanceOf [_from] >= _value);
+
+        //проверка на переполненние
+        require (balanceOf [_to] + _value >= balanceOf[_to]);
+
+        //токены списываются у отправителя
+        balanceOf[_from] -= _value;
+
+        //прибавляются получателю
+        balanceOf [_to] += _value;
+
+        //эвент перевода токенов
+
+        Transfer (_from, _to, _value);
+    }
+
+    //функция для перевода токенов
+    function transfer(address _to, uint256 _value) public returns (bool){
+        //вызов внутренней функции перевода
+        _transfer (msg.sender, _to, _value);
+
+        return true;
+    }
+
+    //функция для перевода  "одобренных" токенов
+     function transferFrom (address _from, address _to, uint _value) public returns(bool) {
+
+         //проверка, что токены были выделены аккаунтом _from для аккаунта _to
+         require (_value <= allowed[_from][_to]);
+
+         //уменьшаем кол-во одобренных токенов
+
+         allowed [_from][_to] -=_value;
+
+        //отправка токенов
+         _transfer (_from, _to, _value);
+
+         return true;
+
+      }
+
+    //функция для "одобрения" перевода токенов
+
+     function approve (address _to, uint256 _value) public returns (bool)  {
+
+        //записываем в маппинг число "одобренных" токенов
+
+         allowed [msg.sender][_to] = _value;
+
+        //вызов эвента для логирования события одобрения превода токенов
+
+         Approval (msg.sender, _to, _value);
+
+         return true;
+      }
+
+    // функция для проверки allowed баланса
+
+
+    function allowance(address _owner, address _spender) public view returns (uint256) {
+
+        return allowed[_owner][_spender];
+
+    }
+
+}
